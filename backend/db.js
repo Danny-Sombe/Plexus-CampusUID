@@ -1,7 +1,7 @@
 const { Pool } = require("pg");
 
 // PostgreSQL connection settings are hardcoded here (change them for your setup).
-// Postgres defaults: user "postgres", port 5432.
+// Postgres defaults: user "postgres", port 5000.
 const pool = new Pool({
   host: "localhost",
   user: "postgres",
