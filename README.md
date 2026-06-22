@@ -174,19 +174,19 @@ Plexus-CampusUID/
 │   ├── db.js          # PostgreSQL connection (pg pool)
 │   └── schema.sql     # Database tables
 │
-└── docs/              # Static pages served by Express (and GitHub Pages)
-    ├── index.html     # Login page
-    ├── signup.html    # Registration page
-    ├── pass.html      # Forgot-password page
-    ├── dashboard.html # Profile + financial records
-    ├── code.html      # QR-code generator
-    ├── student.html   # QR scan landing page
-    ├── style.css      # Shared styles
-    ├── script.js      # Login logic
-    ├── signup.js      # Signup logic
-    ├── pass.js        # Forgot-password logic
-    ├── dashboard.js   # Dashboard logic
-    └── images/        # Background images
+│   # Static pages (served by Express and GitHub Pages from the repo root)
+├── index.html         # Login page
+├── signup.html        # Registration page
+├── pass.html          # Forgot-password page
+├── dashboard.html     # Profile + financial records
+├── code.html          # QR-code generator
+├── student.html       # QR scan landing page
+├── style.css          # Shared styles
+├── script.js          # Login logic
+├── signup.js          # Signup logic
+├── pass.js            # Forgot-password logic
+├── dashboard.js       # Dashboard logic
+└── images/            # Background images
 ```
 
 ---

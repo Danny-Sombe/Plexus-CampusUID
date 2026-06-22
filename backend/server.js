@@ -20,9 +20,45 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (HTML/CSS/JS) from the docs folder (one level up).
-// The folder is named "docs" so GitHub Pages can serve it directly.
-app.use(express.static(path.join(__dirname, "..", "docs")));
+// Static files are served from the repo root (one level up), which also
+// contains backend code, configs, node_modules and the .git folder. Without
+// a guard, a request like /backend/db.js would leak the DB credentials.
+// This middleware blocks anything that isn't a frontend asset, returning 404
+// (not 403) so it doesn't reveal which sensitive files exist.
+const BLOCKED_PREFIXES = ["/backend", "/node_modules", "/.git", "/data"];
+const BLOCKED_EXACT = [
+    "/package.json", "/package-lock.json", "/my.ini",
+    "/requirements.txt", "/qr_scanner.py", "/claude.md", "/readme.md"
+];
+const BLOCKED_EXTENSIONS = [
+    ".py", ".sql", ".ini", ".env", ".log", ".lock",
+    ".md", ".json", ".yml", ".yaml"
+];
+
+app.use((req, res, next) => {
+    let p;
+    try {
+        p = decodeURIComponent(req.path).replace(/\\/g, "/").toLowerCase();
+    } catch (e) {
+        return res.status(400).send("Bad request");
+    }
+
+    const blocked =
+        BLOCKED_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/")) ||
+        BLOCKED_EXACT.includes(p) ||
+        BLOCKED_EXTENSIONS.some(ext => p.endsWith(ext)) ||
+        // Any dot-segment, e.g. /.git, /.env, /folder/.htaccess
+        p.split("/").some(seg => seg.startsWith("."));
+
+    if (blocked) {
+        return res.status(404).send("Not found");
+    }
+    next();
+});
+
+// Serve static files (HTML/CSS/JS) from the repo root (one level up),
+// where all the frontend pages now live.
+app.use(express.static(path.join(__dirname, ".."), { dotfiles: "ignore" }));
 
 const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;
