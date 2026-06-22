@@ -30,6 +30,7 @@ app — what was built, in what order, and how to run it yourself.
 | Passwords | `bcrypt` hashing                                            |
 | QR codes  | `qrcode` library                                            |
 | Email     | `nodemailer` over SMTP                                      |
+| QR scanner| Python companion tool (`opencv-python` + `requests`)        |
 
 The frontend pages are served directly by Express as static files, so there is
 nothing to compile or bundle.
@@ -130,6 +131,27 @@ or use the LAN IP printed in the console to test the QR codes from your phone.
 
 ---
 
+## Python QR scanner (companion tool)
+
+`qr_scanner.py` is a standalone Python helper that **scans** the QR codes the
+web app generates. It reads a QR code (from your webcam or a saved image),
+pulls the student ID out of it, and looks the student up through the running
+backend's `/student-info` route — then prints their name, email, and financial
+records in the terminal. It does not change the web app; it just calls the same API.
+
+```bash
+# 1. install the Python dependencies
+pip install -r requirements.txt
+
+# 2. make sure the Node server is running (npm start), then:
+python qr_scanner.py                    # scan live with the webcam
+python qr_scanner.py --image qr.png     # scan a saved QR image
+python qr_scanner.py --api http://192.168.1.10:5000   # point at a LAN host
+```
+
+It understands every QR format the app produces: a full
+`.../student.html?studentid=123` URL, a `"Student ID: 123"` text, or a bare number.
+
 ## Project structure
 
 ```
@@ -137,6 +159,8 @@ Plexus-CampusUID/
 ├── server.js          # Express backend (all routes)
 ├── db.js              # MySQL connection
 ├── schema.sql         # Database tables
+├── qr_scanner.py      # Python QR-scanner companion tool
+├── requirements.txt   # Python dependencies
 ├── package.json       # Dependencies and scripts
 ├── index.html         # Login page
 ├── signup.html        # Registration page

@@ -241,7 +241,7 @@ async function generateQR(){
     const qrHint = document.getElementById('qrHint');
     clearQrHint();
 
-    const rawHost = serverHostInput || defaultServerHost;
+    const rawHost = serverHostRaw || defaultServerHost;
     const isLocalHost = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(rawHost);
     let hostUrl = rawHost;
 
