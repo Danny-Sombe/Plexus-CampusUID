@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Details</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .container {
+      width: min(760px, 95%);
+      margin: 40px auto;
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      margin: 0 0 16px;
+      color: #1f2937;
+    }
+    .field {
+      margin-bottom: 12px;
+      font-size: 16px;
+      color: #374151;
+    }
+    .field strong {
+      color: #111827;
+    }
+    .records {
+      margin-top: 24px;
+    }
+    .record {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .error {
+      color: #b91c1c;
+      font-size: 16px;
+      margin-top: 24px;
+    }
+    a.back-link {
+      display: inline-block;
+      margin-top: 18px;
+      text-decoration: none;
+      color: #2563eb;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Student Details</h1>
+    <div id="content">
+      <p>Loading student details...</p>
+    </div>
+    <a class="back-link" href="dashboard.html">Back to Dashboard</a>
+  </div>
+
+  <script>
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    async function loadStudent() {
+      const API_PORT = 5000;
+      const SERVER_OVERRIDE = localStorage.getItem('serverHost');
+      const backendOrigin = SERVER_OVERRIDE
+        ? (SERVER_OVERRIDE.match(/^https?:\/\//) ? SERVER_OVERRIDE : `http://${SERVER_OVERRIDE}`)
+        : (window.location.protocol === 'file:' ? `http://localhost:${API_PORT}` : `${window.location.protocol}//${window.location.hostname}:${window.location.port || API_PORT}`);
+
+      const studentId = getQueryParam('studentid');
+      const content = document.getElementById('content');
+
+      if (!studentId) {
+        content.innerHTML = '<p class="error">No student ID provided in the QR code.</p>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendOrigin}/student-info?studentid=${encodeURIComponent(studentId)}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          content.innerHTML = `<p class="error">${data.message || 'Unable to load student details.'}</p>`;
+          return;
+        }
+
+        const student = data.student;
+        const records = data.records || [];
+
+        let html = `
+          <div class="field"><strong>Student ID:</strong> ${student.student_id}</div>
+          <div class="field"><strong>Name:</strong> ${student.first_name} ${student.last_name}</div>
+          <div class="field"><strong>Email:</strong> ${student.email}</div>
+        `;
+
+        if (records.length > 0) {
+          html += '<div class="records"><h2>Financial Records</h2>';
+          records.forEach(record => {
+            html += `
+              <div class="record">
+                <div><strong>Amount Paid:</strong> $${parseFloat(record.amount_paid).toFixed(2)}</div>
+                <div><strong>Payment Date:</strong> ${record.payment_date ? new Date(record.payment_date).toLocaleDateString() : 'N/A'}</div>
+              </div>
+            `;
+          });
+          html += '</div>';
+        } else {
+          html += '<p class="field">No financial records found for this student.</p>';
+        }
+
+        content.innerHTML = html;
+      } catch (err) {
+        content.innerHTML = `<p class="error">Unable to load student details. ${err.message}</p>`;
+      }
+    }
+
+    loadStudent();
+  </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Forgot Password</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial, sans-serif;
+        }
+
+        body{
+            background:#f4f6f9;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            background-image: url("images/134096171718336215.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+        }
+
+        .container{
+            background:white;
+            width:400px;
+            padding:40px;
+            border-radius:12px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1{
+            text-align:center;
+            color:#333;
+            margin-bottom:10px;
+        }
+
+        p{
+            text-align:center;
+            color:#666;
+            margin-bottom:20px;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            border:1px solid #ccc;
+            border-radius:8px;
+            margin-bottom:15px;
+            font-size:14px;
+        }
+
+        input:focus{
+            outline:none;
+            border-color:#007bff;
+        }
+
+        button{
+            width:100%;
+            padding:12px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#0056b3;
+        }
+
+        .back-login{
+            text-align:center;
+            margin-top:15px;
+        }
+
+        .back-login a{
+            color:#007bff;
+            text-decoration:none;
+            font-weight:bold;
+        }
+
+        .back-login a:hover{
+            text-decoration:underline;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>Reset Password</h1>
+
+        <p>Enter your email address.</p>
+
+        <form id="forgot-form">
+
+            <input
+                id="forgot-email"
+                type="email"
+                placeholder="Enter Email"
+                required>
+
+            <button type="submit">
+                Send Reset Link
+            </button>
+
+        </form>
+
+        <div class="back-login">
+            <a href="index.html">Back to Login</a>
+        </div>
+
+    </div>
+    <script src="pass.js"></script>
+</body>
+</html>
