@@ -20,8 +20,9 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (HTML/CSS/JS) from the frontend folder (one level up)
-app.use(express.static(path.join(__dirname, "..", "frontend")));
+// Serve static files (HTML/CSS/JS) from the docs folder (one level up).
+// The folder is named "docs" so GitHub Pages can serve it directly.
+app.use(express.static(path.join(__dirname, "..", "docs")));
 
 const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;

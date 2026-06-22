@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plexus CampusUID QR Generator</title>
+
+   <style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI', Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+
+    background-image:url("images/file_000000002a3c720bb3d1aa5fa8f70086.png");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+}
+
+.container{
+    width:450px;
+    background:rgba(255,255,255,0.95);
+
+    backdrop-filter:blur(10px);
+
+    padding:35px;
+    border-radius:20px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.15);
+
+    text-align:center;
+}
+
+.container h2{
+    color:#1e3a8a;
+    margin-bottom:10px;
+    font-size:30px;
+}
+
+.container p{
+    color:#666;
+    margin-bottom:25px;
+    font-size:14px;
+}
+
+input{
+    width:100%;
+    padding:14px;
+
+    border:2px solid #e5e7eb;
+    border-radius:12px;
+
+    font-size:16px;
+
+    margin-bottom:15px;
+
+    transition:0.3s;
+}
+
+input:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 10px rgba(37,99,235,0.2);
+}
+
+button{
+    padding:12px 22px;
+
+    border:none;
+    border-radius:12px;
+
+    font-size:15px;
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+}
+
+button:first-of-type{
+    background:#2563eb;
+    color:white;
+}
+
+button:first-of-type:hover{
+    background:#1d4ed8;
+}
+
+button:last-of-type{
+    background:#10b981;
+    color:white;
+}
+
+button:last-of-type:hover{
+    background:#059669;
+}
+
+img{
+    margin-top:25px;
+
+    width:340px;
+    height:340px;
+
+    border:4px solid #f1f5f9;
+    border-radius:15px;
+
+    background:white;
+
+    padding:0;
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.1);
+
+    /* Keep module edges crisp when the QR is resized, otherwise the
+       browser smooths/blurs them and phone scanners fail to read it. */
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+}
+
+.qr-section{
+    margin-top:20px;
+}
+
+.footer{
+    margin-top:20px;
+    font-size:12px;
+    color:#888;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Plexus CampusUID</h2>
+
+    <input
+        type="text"
+        id="studentData"
+        placeholder="Enter Student ID or Text"
+    >
+
+    <input
+        type="text"
+        id="serverHost"
+        placeholder="Enter reachable host, e.g. duller-puma-donator.ngrok-free.dev"
+        style="margin-top:14px;"
+    >
+    <p id="serverHint" style="margin-top:8px;font-size:13px;color:#b45309;">Use a phone-reachable host such as your ngrok URL.</p>
+
+    <br>
+
+    <button onclick="generateQR()">
+        Generate QR
+    </button>
+
+    <button onclick="shareQR()">
+        Share QR
+    </button>
+
+    <button onclick="downloadQR()">
+        Download QR
+    </button>
+
+    <a id="downloadLink" download="campusuid-qr.png" style="display:none;"></a>
+
+    <br>
+
+    <img id="qrImage" alt="Generated QR Code">
+    <p id="qrLink" style="margin-top:12px;font-size:14px;color:#555;word-break:break-all;"></p>
+    <p id="qrHint" style="margin-top:8px;font-size:13px;color:#b45309;"></p>
+
+</div>
+
+<script>
+
+const backendHost = window.location.hostname || 'localhost';
+const defaultPort = 5000;
+const backendOrigin = (window.location.protocol === 'file:')
+    ? null
+    : `${window.location.protocol}//${window.location.hostname}:${defaultPort}`;
+const defaultServerHost = `${window.location.hostname || '127.0.0.1'}:${defaultPort}`;
+
+function setServerHint(message) {
+    const hint = document.getElementById('serverHint');
+    if (hint) hint.textContent = message;
+}
+
+function clearQrHint() {
+    const hint = document.getElementById('qrHint');
+    if (hint) hint.textContent = '';
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const userEmail = localStorage.getItem("userEmail");
+    const studentInput = document.getElementById("studentData");
+    const serverHostInput = document.getElementById("serverHost");
+
+    if (serverHostInput) {
+        // If page served from the backend, prefer that origin; otherwise prefill with a LAN:port suggestion
+        serverHostInput.value = backendOrigin ? `${window.location.hostname}:${defaultPort}` : defaultServerHost;
+        serverHostInput.placeholder = 'e.g. 192.168.1.10:5000 or your-ngrok-host.ngrok-free.dev';
+
+        // If we're on localhost (phones can't reach it), ask the backend for its real
+        // LAN IP and prefill that instead, so the QR encodes a phone-openable URL.
+        const currentHost = window.location.hostname || '';
+        const onLocalhost = /^(localhost|127\.0\.0\.1)?$/i.test(currentHost);
+        const infoBase = backendOrigin || (defaultServerHost ? `http://${defaultServerHost}` : null);
+        if (onLocalhost && infoBase) {
+            fetch(`${infoBase.replace(/\/$/, '')}/server-info`)
+                .then(res => res.json())
+                .then(info => {
+                    if (info && info.success && info.addresses && info.addresses.length) {
+                        const lan = info.addresses[0].address;
+                        serverHostInput.value = `${lan}:${info.port}`;
+                        setServerHint(`Auto-filled your LAN IP (${lan}). Make sure your phone is on the same Wi-Fi, or replace this with an ngrok URL.`);
+                    } else {
+                        setServerHint('No LAN IP found. Enter your machine\'s LAN IP or an ngrok URL so your phone can open the QR.');
+                    }
+                })
+                .catch(() => {
+                    setServerHint('Could not detect a LAN IP. Enter your machine\'s LAN IP or an ngrok URL manually.');
+                });
+        }
+    }
+
+    if (userEmail) {
+        fetch(`${backendOrigin}/profile?email=${encodeURIComponent(userEmail)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.user.studentid) {
+                    studentInput.value = data.user.studentid;
+                    studentInput.placeholder = `Your Student ID: ${data.user.studentid}`;
+                }
+            })
+            .catch(err => console.error("Could not load student ID:", err));
+    }
+});
+
+async function generateQR(){
+
+    const text = document.getElementById("studentData").value;
+    const serverHostRaw = document.getElementById("serverHost").value.trim();
+
+    if (!text || !text.trim()) {
+        alert("Please enter student ID or text before generating the QR code.");
+        return;
+    }
+
+    let qrPayload = text.trim();
+    const qrHint = document.getElementById('qrHint');
+    clearQrHint();
+
+    const rawHost = serverHostRaw || defaultServerHost;
+    const isLocalHost = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(rawHost);
+    let hostUrl = rawHost;
+
+    if (!/^https?:\/\//i.test(hostUrl)) {
+        hostUrl = `http://${hostUrl}`;
+    }
+
+    if (/^\d+$/.test(qrPayload)) {
+        if (!isLocalHost) {
+            qrPayload = `${hostUrl}/student.html?studentid=${encodeURIComponent(qrPayload)}`;
+            if (qrHint) {
+                qrHint.textContent = `QR will open ${hostUrl} on your phone.`;
+            }
+        } else {
+            qrPayload = `Student ID: ${qrPayload}`;
+            if (qrHint) {
+                qrHint.textContent = 'The host is localhost/127.0.0.1, which your phone cannot reach. Enter a LAN IP or public host if you want a phone-openable URL.';
+            }
+        }
+    }
+
+    // Choose API base: prefer backendOrigin if page is served from server, otherwise use user-provided serverHostRaw
+    const apiBase = backendOrigin || (serverHostRaw ? (serverHostRaw.match(/^https?:\/\//) ? serverHostRaw : `http://${serverHostRaw}`) : null);
+
+    if (!apiBase) {
+        alert('Enter a reachable server host (e.g. 192.168.1.10:5000) in the field above, or open this page from the backend server.');
+        return;
+    }
+
+    const response = await fetch(`${apiBase.replace(/\/$/, '')}/generateQR`,{
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify({
+                data:qrPayload
+            })
+
+        });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+        alert(result.message || "Unable to generate QR code.");
+        return;
+    }
+
+    const qrImg = document.getElementById("qrImage");
+    qrImg.src = result.qr;
+    qrImg.alt = "Generated QR Code";
+    document.getElementById("qrLink").textContent = qrPayload;
+
+}
+
+function shareQR(){
+
+    const image =
+        document.getElementById("qrImage").src;
+
+    if (!image) {
+        alert("Generate a QR code first.");
+        return;
+    }
+
+    navigator.clipboard.writeText(image);
+
+    alert("QR data URL copied. Paste it into a browser or text field.");
+}
+
+function downloadQR(){
+    const image = document.getElementById("qrImage").src;
+
+    if (!image) {
+        alert("Generate a QR code first.");
+        return;
+    }
+
+    const link = document.getElementById("downloadLink");
+    link.href = image;
+    link.click();
+}
+
+</script>
+
+</body>
+</html>

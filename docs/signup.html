@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CampusUID Sign Up</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial, sans-serif;
+        }
+
+        body{
+            background:#f4f6f9;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            background-image: url("images/134103911190002354.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+         height: 100vh;
+        }
+
+        .signup-container{
+            background:#fff;
+            padding:40px;
+            width:400px;
+            border-radius:12px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .signup-container h1{
+            text-align:center;
+            margin-bottom:10px;
+            color:#333;
+        }
+
+        .signup-container p{
+            text-align:center;
+            color:#666;
+            margin-bottom:20px;
+        }
+
+        label{
+            display:block;
+            margin-bottom:5px;
+            font-weight:bold;
+            color:#444;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            border:1px solid #ccc;
+            border-radius:8px;
+            margin-bottom:15px;
+            font-size:14px;
+        }
+
+        input:focus{
+            outline:none;
+            border-color:#007bff;
+        }
+
+        button{
+            width:100%;
+            padding:12px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#0056b3;
+        }
+
+        .login-link{
+            text-align:center;
+            margin-top:15px;
+        }
+
+        .login-link a{
+            color:#007bff;
+            text-decoration:none;
+            font-weight:bold;
+        }
+
+        .login-link a:hover{
+            text-decoration:underline;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div class="signup-container">
+
+        <h1>Create Account</h1>
+        <p>Register for CampusUID</p>
+
+        <form id="signupform">
+
+            <label>Full Name</label>
+            <input id="fullname" type="text" name="fullname" placeholder="Enter Full Name" required>
+
+            <label>Student ID</label>
+            <input id="studentid" type="text" name="studentid" placeholder="Enter Student ID" required>
+
+            <label>Email</label>
+            <input id="email" type="email" name="email" placeholder="Enter Email" required>
+
+            <label>Password</label>
+            <input id="password" type="password" name="password" placeholder="Enter Password" required>
+
+            <button type="submit">Create Account</button>
+
+        </form>
+
+        <div class="login-link">
+            Already have an account?
+            <a href="index.html">Login</a>
+        </div>
+
+    </div>
+   <script src="signup.js"></script>
+</body>
+</html>
