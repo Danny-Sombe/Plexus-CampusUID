@@ -2,10 +2,10 @@
   "name": "plexus-campusuid",
   "version": "1.0.0",
   "description": "",
-  "main": "db.js",
+  "main": "backend/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node backend/server.js"
   },
   "keywords": [],
   "author": "",
@@ -17,8 +17,8 @@
     "express": "^5.2.1",
     "jimp": "^1.6.1",
     "jsqr": "^1.4.0",
-    "mysql2": "^3.22.5",
     "nodemailer": "^8.0.10",
+    "pg": "^8.22.0",
     "qrcode": "^1.5.4"
   }
 }

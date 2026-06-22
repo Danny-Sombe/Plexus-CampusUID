@@ -25,7 +25,7 @@ app — what was built, in what order, and how to run it yourself.
 | Layer     | Choice                                                      |
 |-----------|-------------------------------------------------------------|
 | Backend   | Node.js + Express (a single `server.js`)                    |
-| Database  | MySQL (database `campusuid`)                                |
+| Database  | PostgreSQL (database `campusuid`)                           |
 | Frontend  | Plain HTML, CSS, and JavaScript — **no framework, no build step** |
 | Passwords | `bcrypt` hashing                                            |
 | QR codes  | `qrcode` library                                            |
@@ -41,16 +41,17 @@ nothing to compile or bundle.
 
 ### 1. Project setup
 - Initialized a Node.js project (`npm init`) which created `package.json`.
-- Installed the dependencies: `express`, `mysql2`, `bcrypt`, `cors`,
+- Installed the dependencies: `express`, `pg`, `bcrypt`, `cors`,
   `qrcode`, and `nodemailer`.
-- Added a start script: `npm start` runs `node server.js`.
+- Added a start script: `npm start` runs `node backend/server.js`.
 
 ### 2. The database
 - Designed the schema in `schema.sql` with three tables:
   - **`users`** — login/auth data: `fullname`, `studentid`, `email`, hashed `password`.
   - **`students`** — profile data: `student_id`, `first_name`, `last_name`, `email`.
   - **`financial_records`** — `student_id`, `amount_paid`, `payment_date`.
-- Created the MySQL connection in `db.js` (host, user, password, database, port).
+- Created the PostgreSQL connection in `db.js` using a `pg` connection pool
+  (host, user, password, database, port).
 
 ### 3. The backend (`server.js`)
 - Built an Express server that:
@@ -100,7 +101,7 @@ Each page is a small HTML file with its own JavaScript:
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) installed
-- [MySQL](https://www.mysql.com/) installed and running
+- [PostgreSQL](https://www.postgresql.org/) installed and running
 
 ### 1. Install dependencies
 ```bash
@@ -108,10 +109,18 @@ npm install
 ```
 
 ### 2. Set up the database
-1. Make sure MySQL is running.
-2. Create a database named `campusuid`.
-3. Run the table definitions from `schema.sql`.
-4. Open `db.js` and set your MySQL `user`, `password`, `host`, and `port`.
+1. Make sure PostgreSQL is running.
+2. Create a database named `campusuid`:
+   ```bash
+   createdb campusuid
+   # or, in psql:  CREATE DATABASE campusuid;
+   ```
+3. Run the table definitions from `backend/schema.sql`:
+   ```bash
+   psql -d campusuid -f backend/schema.sql
+   ```
+4. Open `backend/db.js` and set your PostgreSQL `user`, `password`, `host`, and `port`
+   (Postgres defaults: user `postgres`, port `5432`).
 
 ### 3. (Optional) Set up email for password reset
 Set these environment variables before starting the server:
@@ -156,24 +165,28 @@ It understands every QR format the app produces: a full
 
 ```
 Plexus-CampusUID/
-├── server.js          # Express backend (all routes)
-├── db.js              # MySQL connection
-├── schema.sql         # Database tables
+├── package.json       # Dependencies and scripts (npm start)
 ├── qr_scanner.py      # Python QR-scanner companion tool
 ├── requirements.txt   # Python dependencies
-├── package.json       # Dependencies and scripts
-├── index.html         # Login page
-├── signup.html        # Registration page
-├── pass.html          # Forgot-password page
-├── dashboard.html     # Profile + financial records
-├── code.html          # QR-code generator
-├── student.html       # QR scan landing page
-├── style.css          # Shared styles
-├── script.js          # Login logic
-├── signup.js          # Signup logic
-├── pass.js            # Forgot-password logic
-├── dashboard.js       # Dashboard logic
-└── images/            # Background image
+│
+├── backend/           # Node.js + Express server
+│   ├── server.js      # Express backend (all routes)
+│   ├── db.js          # PostgreSQL connection (pg pool)
+│   └── schema.sql     # Database tables
+│
+└── frontend/          # Static pages served by Express
+    ├── index.html     # Login page
+    ├── signup.html    # Registration page
+    ├── pass.html      # Forgot-password page
+    ├── dashboard.html # Profile + financial records
+    ├── code.html      # QR-code generator
+    ├── student.html   # QR scan landing page
+    ├── style.css      # Shared styles
+    ├── script.js      # Login logic
+    ├── signup.js      # Signup logic
+    ├── pass.js        # Forgot-password logic
+    ├── dashboard.js   # Dashboard logic
+    └── images/        # Background images
 ```
 
 ---
@@ -185,8 +198,8 @@ Plexus-CampusUID/
   student ID. Adding real server-side sessions/JWT would be a good next step.
 - The `users` and `students` tables both store a student ID but are linked only
   by application code (no database foreign key) — keep them in sync when editing.
-- Database credentials are stored in `db.js`. For a real deployment, move them
+- Database credentials are stored in `backend/db.js`. For a real deployment, move them
   into environment variables and never commit real passwords.
 
 > Built as a learning project: a full sign-up → login → dashboard → QR-code flow
-> using Node.js, Express, and MySQL.
+> using Node.js, Express, and PostgreSQL.

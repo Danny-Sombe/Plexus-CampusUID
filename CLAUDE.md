@@ -4,14 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Plexus CampusUID is a student-ID / campus portal: a Node.js + Express backend (`server.js`) serving a set of static HTML/CSS/JS pages from the project root. There is **no build step, no bundler, no test suite, and no framework** on the frontend — pages are plain HTML with inline or sibling `<page>.js` files, served directly via `express.static(__dirname)`.
+Plexus CampusUID is a student-ID / campus portal: a Node.js + Express backend (`backend/server.js`) serving a set of static HTML/CSS/JS pages from `frontend/`. There is **no build step, no bundler, no test suite, and no framework** on the frontend — pages are plain HTML with inline or sibling `<page>.js` files, served via `express.static(path.join(__dirname, "..", "frontend"))`.
+
+The project is split into folders: `backend/` (Express server, DB connection, schema), `frontend/` (all HTML/CSS/JS and `images/`), plus `qr_scanner.py` (a standalone Python QR-scanner companion tool) and `package.json`/`node_modules` at the repo root.
 
 ## Commands
 
 ```bash
-npm install          # install dependencies
-npm start            # run the server (node server.js) on port 5000
-node server.js       # same thing
+npm install          # install dependencies (run from repo root)
+npm start            # run the server (node backend/server.js) on port 5000
+node backend/server.js   # same thing
 ```
 
 - `npm test` is a placeholder that exits 1 — there are no tests.
@@ -20,12 +22,12 @@ node server.js       # same thing
 
 ## Required environment / external services
 
-- **MySQL** must be running locally. Connection settings (host, user, password, database `campusuid`, port 3306) are **hardcoded in `db.js`** — change them there, not via env vars. Create the schema with `schema.sql` (tables `users`, `students`, `financial_records`).
+- **PostgreSQL** must be running locally. Connection settings (host, user, password, database `campusuid`, port 5432) are **hardcoded in `backend/db.js`** as a `pg` connection pool — change them there, not via env vars. Create the schema with `backend/schema.sql` (tables `users`, `students`, `financial_records`).
 - **Email (forgot-password)** uses nodemailer over SMTP, configured purely via env vars: `EMAIL_USER`, `EMAIL_PASS`, optional `EMAIL_HOST` (default `smtp.gmail.com`), `EMAIL_PORT` (default 587). If `EMAIL_USER`/`EMAIL_PASS` are unset the server still boots but `/forgot-password` returns a 500. Gmail requires an App Password.
 
 ## Architecture
 
-**Backend** (`server.js`) is a single flat file of Express routes using the **callback style** of `mysql2` (`db.query(sql, params, cb)`) with nested callbacks — not promises/async for DB calls. All SQL is parameterized. Routes: `/signup`, `/login`, `/forgot-password`, `/profile`, `/financial-records`, `/student-info`, `/students`, `/generateQR`, plus `/` and `/test` health checks.
+**Backend** (`backend/server.js`) is a single flat file of Express routes using the **callback style** of the `pg` pool (`db.query(sql, params, cb)`) with nested callbacks — not promises/async for DB calls. The callback receives `(err, result)`; **rows are in `result.rows`** (not the bare array MySQL returned). All SQL is parameterized with **`$1, $2, …` placeholders** (Postgres style, not `?`). Routes: `/signup`, `/login`, `/forgot-password`, `/profile`, `/financial-records`, `/student-info`, `/students`, `/generateQR`, plus `/` and `/test` health checks.
 
 **Data model is split across two tables that both carry a student ID.** Signup writes the same record three places in sequence (nested callbacks): `users` (auth: fullname, studentid, email, bcrypt password), `students` (first_name/last_name split from fullname, email), and a zero-amount row in `financial_records`. `users.studentid` and `students.student_id` are independent `VARCHAR` columns kept in sync only by application code — there is no FK. When touching signup or student lookups, keep all three writes consistent.
 
@@ -48,4 +50,4 @@ node server.js       # same thing
 ## Notes
 
 - `jimp` and `jsqr` are listed as dependencies but are not referenced in the current server code.
-- `my.ini` is a MySQL server config file, not part of the app.
+- `my.ini` is a leftover MySQL server config file — no longer used now that the app runs on PostgreSQL.

@@ -1,20 +1,24 @@
-const mysql = require("mysql2");
+const { Pool } = require("pg");
 
-const db = mysql.createConnection({
+// PostgreSQL connection settings are hardcoded here (change them for your setup).
+// Postgres defaults: user "postgres", port 5432.
+const pool = new Pool({
   host: "localhost",
-  user: "root",
+  user: "postgres",
   password: "Massalai0675#",
   database: "campusuid",
-  port: 3306
+  port: 5432
 });
 
-db.connect((err) => {
+// Test the connection on startup (does not crash the server if it fails).
+pool.connect((err, client, release) => {
   if (err) {
-    console.error("DB Error:", err);
+    console.error("DB Error:", err.message);
     return;
   }
 
-  console.log("MySQL Connected");
+  console.log("PostgreSQL Connected");
+  release();
 });
 
-module.exports = db;
+module.exports = pool;

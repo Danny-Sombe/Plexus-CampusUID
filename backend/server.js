@@ -20,8 +20,8 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (HTML/CSS/JS)
-app.use(express.static(path.join(__dirname)));
+// Serve static files (HTML/CSS/JS) from the frontend folder (one level up)
+app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;
@@ -98,7 +98,7 @@ app.post("/signup", async (req, res) => {
         const userSql = `
             INSERT INTO users
             (fullname, studentid, email, password)
-            VALUES (?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4)
         `;
 
         db.query(
@@ -115,7 +115,7 @@ app.post("/signup", async (req, res) => {
                 const studentSql = `
                     INSERT INTO students
                     (student_id, first_name, last_name, email)
-                    VALUES (?, ?, ?, ?)
+                    VALUES ($1, $2, $3, $4)
                 `;
 
                 db.query(
@@ -133,12 +133,12 @@ app.post("/signup", async (req, res) => {
                         const financialSql = `
                             INSERT INTO financial_records
                             (student_id, amount_paid, payment_date)
-                            VALUES (?, ?, CURDATE())
+                            VALUES ($1, $2, CURRENT_DATE)
                         `;
 
                         db.query(
                             financialSql,
-                            [studentIdInt, 0.00],
+                            [studentid, 0.00],
                             (err, financialResult) => {
                                 if (err) {
                                     console.error("Financial record insert error:", err);
@@ -181,7 +181,7 @@ app.get("/students", (req, res) => {
     ON students.student_id = financial_records.student_id
     `;
 
-    db.query(query, (err, results) => {
+    db.query(query, (err, result) => {
 
         if (err) {
             return res.status(500).json({
@@ -189,7 +189,7 @@ app.get("/students", (req, res) => {
             });
         }
 
-        res.json(results);
+        res.json(result.rows);
 
     });
 
@@ -200,9 +200,9 @@ app.post("/login", (req, res) => {
 
     const { email, password } = req.body;
 
-    const sql = "SELECT * FROM users WHERE email = ?";
+    const sql = "SELECT * FROM users WHERE email = $1";
 
-    db.query(sql, [email], async (err, results) => {
+    db.query(sql, [email], async (err, result) => {
 
         if (err) {
             return res.status(500).json({
@@ -211,14 +211,14 @@ app.post("/login", (req, res) => {
             });
         }
 
-        if (results.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(401).json({
                 success: false,
                 message: "User not found"
             });
         }
 
-        const user = results[0];
+        const user = result.rows[0];
 
             const match = await bcrypt.compare(password, user.password);
 
@@ -247,9 +247,9 @@ app.post("/forgot-password", async (req, res) => {
         });
     }
 
-    const sql = "SELECT * FROM users WHERE email = ?";
+    const sql = "SELECT * FROM users WHERE email = $1";
 
-    db.query(sql, [email], async (err, results) => {
+    db.query(sql, [email], async (err, result) => {
         if (err) {
             return res.status(500).json({
                 success: false,
@@ -257,7 +257,7 @@ app.post("/forgot-password", async (req, res) => {
             });
         }
 
-        if (results.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Email not found"
@@ -267,7 +267,7 @@ app.post("/forgot-password", async (req, res) => {
         const tempPassword = crypto.randomBytes(5).toString("hex");
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        const updateSql = "UPDATE users SET password = ? WHERE email = ?";
+        const updateSql = "UPDATE users SET password = $1 WHERE email = $2";
         db.query(updateSql, [hashedPassword, email], (updateErr) => {
             if (updateErr) {
                 return res.status(500).json({
@@ -327,9 +327,9 @@ app.get("/profile", (req, res) => {
         });
     }
 
-    const sql = "SELECT fullname, email, studentid FROM users WHERE email = ?";
+    const sql = "SELECT fullname, email, studentid FROM users WHERE email = $1";
 
-    db.query(sql, [email], (err, results) => {
+    db.query(sql, [email], (err, result) => {
         if (err) {
             return res.status(500).json({
                 success: false,
@@ -337,7 +337,7 @@ app.get("/profile", (req, res) => {
             });
         }
 
-        if (results.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "User not found"
@@ -346,7 +346,7 @@ app.get("/profile", (req, res) => {
 
         res.json({
             success: true,
-            user: results[0]
+            user: result.rows[0]
         });
     });
 });
@@ -368,11 +368,11 @@ app.get("/financial-records", (req, res) => {
             financial_records.amount_paid,
             financial_records.payment_date
         FROM financial_records
-        WHERE financial_records.student_id = ?
+        WHERE financial_records.student_id = $1
         ORDER BY financial_records.payment_date DESC
     `;
 
-    db.query(sql, [studentid], (err, results) => {
+    db.query(sql, [studentid], (err, result) => {
         if (err) {
             return res.status(500).json({
                 success: false,
@@ -382,7 +382,7 @@ app.get("/financial-records", (req, res) => {
 
         res.json({
             success: true,
-            records: results || []
+            records: result.rows || []
         });
     });
 });
@@ -415,11 +415,11 @@ app.get("/student-info", (req, res) => {
         FROM students s
         LEFT JOIN financial_records fr
         ON s.student_id = fr.student_id
-        WHERE s.student_id = ?
+        WHERE s.student_id = $1
         ORDER BY fr.payment_date DESC
     `;
 
-    db.query(sql, [studentId], (err, results) => {
+    db.query(sql, [String(studentId)], (err, result) => {
         if (err) {
             return res.status(500).json({
                 success: false,
@@ -427,7 +427,7 @@ app.get("/student-info", (req, res) => {
             });
         }
 
-        if (results.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Student not found"
@@ -435,13 +435,13 @@ app.get("/student-info", (req, res) => {
         }
 
         const student = {
-            student_id: results[0].student_id,
-            first_name: results[0].first_name,
-            last_name: results[0].last_name,
-            email: results[0].email
+            student_id: result.rows[0].student_id,
+            first_name: result.rows[0].first_name,
+            last_name: result.rows[0].last_name,
+            email: result.rows[0].email
         };
 
-        const records = results
+        const records = result.rows
             .filter(row => row.payment_date !== null)
             .map(row => ({
                 amount_paid: row.amount_paid,

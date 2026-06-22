@@ -1,5 +1,5 @@
 CREATE TABLE students (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     student_id VARCHAR(100),
     first_name VARCHAR(50),
     last_name VARCHAR(50),
@@ -8,14 +8,14 @@ CREATE TABLE students (
 );
 
 CREATE TABLE financial_records (
-    record_id INT AUTO_INCREMENT PRIMARY KEY,
+    record_id SERIAL PRIMARY KEY,
     student_id VARCHAR(100),
     amount_paid DECIMAL(10,2),
     payment_date DATE
 );
 
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     fullname VARCHAR(100),
     studentid VARCHAR(100),
     email VARCHAR(100) UNIQUE,
