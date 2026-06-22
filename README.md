@@ -174,7 +174,7 @@ Plexus-CampusUID/
 │   ├── db.js          # PostgreSQL connection (pg pool)
 │   └── schema.sql     # Database tables
 │
-└── frontend/          # Static pages served by Express
+└── docs/              # Static pages served by Express (and GitHub Pages)
     ├── index.html     # Login page
     ├── signup.html    # Registration page
     ├── pass.html      # Forgot-password page

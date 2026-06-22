@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Plexus CampusUID is a student-ID / campus portal: a Node.js + Express backend (`backend/server.js`) serving a set of static HTML/CSS/JS pages from `frontend/`. There is **no build step, no bundler, no test suite, and no framework** on the frontend — pages are plain HTML with inline or sibling `<page>.js` files, served via `express.static(path.join(__dirname, "..", "frontend"))`.
+Plexus CampusUID is a student-ID / campus portal: a Node.js + Express backend (`backend/server.js`) serving a set of static HTML/CSS/JS pages from `docs/`. There is **no build step, no bundler, no test suite, and no framework** on the frontend — pages are plain HTML with inline or sibling `<page>.js` files, served via `express.static(path.join(__dirname, "..", "docs"))`. The folder is named `docs/` (rather than `frontend/`) so GitHub Pages can serve it directly from the repo.
 
-The project is split into folders: `backend/` (Express server, DB connection, schema), `frontend/` (all HTML/CSS/JS and `images/`), plus `qr_scanner.py` (a standalone Python QR-scanner companion tool) and `package.json`/`node_modules` at the repo root.
+The project is split into folders: `backend/` (Express server, DB connection, schema), `docs/` (all HTML/CSS/JS and `images/`), plus `qr_scanner.py` (a standalone Python QR-scanner companion tool) and `package.json`/`node_modules` at the repo root.
 
 ## Commands
 
