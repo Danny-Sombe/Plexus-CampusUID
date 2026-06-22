@@ -7,7 +7,9 @@ const pool = new Pool({
   user: "postgres",
   password: "Massalai0675#",
   database: "campusuid",
-  port: 5432
+  // Use the HTTP server port (process.env.PORT) to match server.js default (5000).
+  // This makes the DB port follow the server port when not otherwise specified.
+  port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000
 });
 
 // Test the connection on startup (does not crash the server if it fails).
