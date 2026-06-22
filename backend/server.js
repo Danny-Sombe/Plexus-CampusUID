@@ -81,7 +81,10 @@ async function setupTransporter() {
 setupTransporter().catch(err => console.error("setupTransporter error:", err));
 
 
-// Collect non-internal IPv4 LAN addresses (used for startup log and /server-info)
+// Collect non-internal IPv4 LAN addresses (used for startup log and /server-info).
+// Results are ranked so a phone-reachable Wi-Fi/Ethernet address comes first and
+// virtual-adapter addresses (VirtualBox/VMware/Hyper-V) — which phones CANNOT
+// reach — are pushed to the end.
 function getLanAddresses() {
     const nets = os.networkInterfaces();
     const addresses = [];
@@ -92,7 +95,21 @@ function getLanAddresses() {
             }
         }
     });
-    return addresses;
+
+    // Lower score = more likely a real, phone-reachable network.
+    const score = ({ name, address }) => {
+        const n = name.toLowerCase();
+        // Virtual / host-only adapters phones can't reach.
+        if (/virtualbox|vmware|hyper-v|vethernet|loopback|docker/.test(n)) return 3;
+        // VirtualBox's default host-only subnet, regardless of adapter name.
+        if (address.startsWith('192.168.56.')) return 3;
+        // Prefer Wi-Fi, then wired Ethernet.
+        if (/wi-?fi|wireless|wlan/.test(n)) return 0;
+        if (/ethernet|eth|lan/.test(n)) return 1;
+        return 2;
+    };
+
+    return addresses.sort((a, b) => score(a) - score(b));
 }
 
 // Home Route
