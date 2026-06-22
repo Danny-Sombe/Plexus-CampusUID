@@ -190,7 +190,7 @@ const backendHost = window.location.hostname || 'localhost';
 const defaultPort = 5000;
 const backendOrigin = (window.location.protocol === 'file:')
     ? null
-    : `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ':' + defaultPort}`;
+    : `${window.location.protocol}//${window.location.hostname}:${defaultPort}`;
 const defaultServerHost = `${window.location.hostname || '127.0.0.1'}:${defaultPort}`;
 
 function setServerHint(message) {
@@ -210,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (serverHostInput) {
         // If page served from the backend, prefer that origin; otherwise prefill with a LAN:port suggestion
-        serverHostInput.value = backendOrigin ? `${window.location.hostname}:${window.location.port || defaultPort}` : defaultServerHost;
+        serverHostInput.value = backendOrigin ? `${window.location.hostname}:${defaultPort}` : defaultServerHost;
         serverHostInput.placeholder = 'e.g. 192.168.1.10:5000 or your-ngrok-host.ngrok-free.dev';
     }
 

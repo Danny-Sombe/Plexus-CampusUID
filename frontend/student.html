@@ -79,7 +79,7 @@
       const SERVER_OVERRIDE = localStorage.getItem('serverHost');
       const backendOrigin = SERVER_OVERRIDE
         ? (SERVER_OVERRIDE.match(/^https?:\/\//) ? SERVER_OVERRIDE : `http://${SERVER_OVERRIDE}`)
-        : (window.location.protocol === 'file:' ? `http://localhost:${API_PORT}` : `${window.location.protocol}//${window.location.hostname}:${window.location.port || API_PORT}`);
+        : (window.location.protocol === 'file:' ? `http://localhost:${API_PORT}` : `${window.location.protocol}//${window.location.hostname}:${API_PORT}`);
 
       const studentId = getQueryParam('studentid');
       const content = document.getElementById('content');

@@ -264,46 +264,51 @@ app.post("/forgot-password", async (req, res) => {
             });
         }
 
+        // Check email is usable BEFORE touching the password, so a failed/
+        // unconfigured send never locks the user out of their account.
+        if (!emailConfigured || !transporter) {
+            return res.status(500).json({
+                success: false,
+                message: "Email service is not configured. Set EMAIL_USER and EMAIL_PASS in your environment."
+            });
+        }
+
         const tempPassword = crypto.randomBytes(5).toString("hex");
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        const updateSql = "UPDATE users SET password = $1 WHERE email = $2";
-        db.query(updateSql, [hashedPassword, email], (updateErr) => {
-            if (updateErr) {
+        const mailOptions = {
+            from: emailUser,
+            to: email,
+            subject: "CampusUID Password Reset",
+            text: `Your temporary password is: ${tempPassword}\nPlease sign in and change it immediately.`
+        };
+
+        // Send the email FIRST; only persist the new password if it actually went out.
+        transporter.sendMail(mailOptions, (mailErr, info) => {
+            if (mailErr) {
+                console.error('Reset email send error:', mailErr);
+
+                // Detect common Gmail auth failure and give actionable message
+                const isAuthError = mailErr && (mailErr.responseCode === 535 || /Username and Password not accepted|BadCredentials|Invalid login/i.test(mailErr.message));
+
+                const userMessage = isAuthError
+                    ? 'Email provider rejected SMTP credentials. If you use Gmail, generate an App Password (if using 2FA) or configure OAuth2. See: https://support.google.com/mail/?p=BadCredentials'
+                    : 'Failed to send reset email. Check server logs for details.';
+
+                // Password was NOT changed, so the user can still log in with their existing one.
                 return res.status(500).json({
                     success: false,
-                    message: updateErr.message
+                    message: userMessage
                 });
             }
 
-                if (!emailConfigured || !transporter) {
+            // Email sent — now it's safe to store the temporary password.
+            const updateSql = "UPDATE users SET password = $1 WHERE email = $2";
+            db.query(updateSql, [hashedPassword, email], (updateErr) => {
+                if (updateErr) {
                     return res.status(500).json({
                         success: false,
-                        message: "Email service is not configured. Set EMAIL_USER and EMAIL_PASS in your environment."
-                    });
-                }
-
-            const mailOptions = {
-                from: emailUser,
-                to: email,
-                subject: "CampusUID Password Reset",
-                text: `Your temporary password is: ${tempPassword}\nPlease sign in and change it immediately.`
-            };
-
-            transporter.sendMail(mailOptions, (mailErr, info) => {
-                if (mailErr) {
-                    console.error('Reset email send error:', mailErr);
-
-                    // Detect common Gmail auth failure and give actionable message
-                    const isAuthError = mailErr && (mailErr.responseCode === 535 || /Username and Password not accepted|BadCredentials|Invalid login/i.test(mailErr.message));
-
-                    const userMessage = isAuthError
-                        ? 'Email provider rejected SMTP credentials. If you use Gmail, generate an App Password (if using 2FA) or configure OAuth2. See: https://support.google.com/mail/?p=BadCredentials'
-                        : 'Failed to send reset email. Check server logs for details.';
-
-                    return res.status(500).json({
-                        success: false,
-                        message: userMessage
+                        message: updateErr.message
                     });
                 }
 

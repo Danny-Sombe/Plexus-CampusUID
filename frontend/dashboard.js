@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const SERVER_OVERRIDE = localStorage.getItem('serverHost');
     const API_BASE = SERVER_OVERRIDE
         ? (SERVER_OVERRIDE.match(/^https?:\/\//) ? SERVER_OVERRIDE : `http://${SERVER_OVERRIDE}`)
-        : (window.location.protocol === 'file:' ? `http://localhost:${API_PORT}` : `${window.location.protocol}//${window.location.hostname}:${window.location.port || API_PORT}`);
+        : (window.location.protocol === 'file:' ? `http://localhost:${API_PORT}` : `${window.location.protocol}//${window.location.hostname}:${API_PORT}`);
     const userEmail = localStorage.getItem("userEmail");
 
     if (!userEmail) {
