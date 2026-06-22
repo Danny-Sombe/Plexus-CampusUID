@@ -1,0 +1,39 @@
+# Render blueprint — deploys the backend (Express) + a managed PostgreSQL DB.
+#
+# How to use:
+#   1. Push this repo to GitHub.
+#   2. In Render: New → Blueprint → connect this repo. Render reads this file.
+#   3. After it deploys, copy the web service URL (https://<name>.onrender.com)
+#      into config.js -> window.PRODUCTION_BACKEND_URL.
+#   4. Create the tables once: Render dashboard → the database → "Connect" →
+#      run the contents of backend/schema.sql (psql or the web shell).
+#   5. (Optional) set EMAIL_USER / EMAIL_PASS in the web service's Environment
+#      tab to enable /forgot-password (Gmail needs an App Password).
+#
+# The frontend stays on GitHub Pages; only the backend lives here.
+
+databases:
+  - name: campusuid-db
+    databaseName: campusuid
+    plan: free
+
+services:
+  - type: web
+    name: plexus-campusuid
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node backend/server.js
+    envVars:
+      # Render injects the managed DB connection string here; db.js reads it.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: campusuid-db
+          property: connectionString
+      # Set these in the Render dashboard (marked sync:false so they are not
+      # stored in git). Without them the server still boots but /forgot-password
+      # returns an error.
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false

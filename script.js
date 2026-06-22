@@ -4,11 +4,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    const API_PORT = 5000;
-    const SERVER_OVERRIDE = localStorage.getItem('serverHost');
-    const API_BASE = SERVER_OVERRIDE
-        ? (SERVER_OVERRIDE.match(/^https?:\/\//) ? SERVER_OVERRIDE : `http://${SERVER_OVERRIDE}`)
-        : (window.location.protocol === 'file:' ? `http://localhost:${API_PORT}` : `${window.location.protocol}//${window.location.hostname}:${API_PORT}`);
+    const API_BASE = getApiBase(); // defined in config.js
 
     try {
         const response = await fetch(`${API_BASE.replace(/\/$/, '')}/login`, {
