@@ -31,34 +31,54 @@ const emailPort = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 58
 let transporter;
 let emailConfigured = false;
 
-if (emailUser && emailPass) {
-    transporter = nodemailer.createTransport({
-        host: emailHost,
-        port: emailPort,
-        secure: false,
-        auth: {
-            user: emailUser,
-            pass: emailPass
-        }
-    });
-    emailConfigured = true;
-} else {
-    console.warn("EMAIL_USER and EMAIL_PASS are not configured. Forgot-password email will not work.");
-}
+async function setupTransporter() {
+    if (emailUser && emailPass) {
+        transporter = nodemailer.createTransport({
+            host: emailHost,
+            port: emailPort,
+            secure: false,
+            auth: {
+                user: emailUser,
+                pass: emailPass
+            }
+        });
 
-// If transporter exists, verify credentials early and log actionable guidance
-if (typeof transporter !== 'undefined' && transporter) {
-    transporter.verify()
-        .then(() => {
+        try {
+            await transporter.verify();
             emailConfigured = true;
             console.log("Email transporter verified — ready to send emails.");
-        })
-        .catch((err) => {
+            return;
+        } catch (err) {
             emailConfigured = false;
             console.error("Email transporter verification failed:", err && err.message ? err.message : err);
             console.error("If you use Gmail, create an App Password (if 2FA is enabled) or configure OAuth2. See: https://support.google.com/mail/?p=BadCredentials");
+            console.error("Falling back to a local test account (Ethereal) for development/testing.");
+        }
+    } else {
+        console.warn("EMAIL_USER and EMAIL_PASS are not configured. Falling back to a test SMTP account for development.");
+    }
+
+    try {
+        const testAccount = await nodemailer.createTestAccount();
+        transporter = nodemailer.createTransport({
+            host: testAccount.smtp.host,
+            port: testAccount.smtp.port,
+            secure: testAccount.smtp.secure,
+            auth: {
+                user: testAccount.user,
+                pass: testAccount.pass
+            }
         });
+        emailConfigured = true;
+        console.log("Using Ethereal test SMTP account — emails will not be delivered to real inboxes.");
+        console.log(`Ethereal account: ${testAccount.user} / ${testAccount.pass}`);
+    } catch (err) {
+        emailConfigured = false;
+        console.error("Failed to create test SMTP account:", err && err.message ? err.message : err);
+    }
 }
+
+setupTransporter().catch(err => console.error("setupTransporter error:", err));
 
 
 // Home Route
@@ -302,7 +322,14 @@ app.post("/forgot-password", async (req, res) => {
                 });
             }
 
-            // Email sent — now it's safe to store the temporary password.
+            // Email sent — log preview URL for test accounts, then persist the temporary password.
+            try {
+                const previewUrl = nodemailer.getTestMessageUrl(info);
+                if (previewUrl) console.log(`Password reset email preview URL: ${previewUrl}`);
+            } catch (e) {
+                // ignore if not a test account
+            }
+
             const updateSql = "UPDATE users SET password = $1 WHERE email = $2";
             db.query(updateSql, [hashedPassword, email], (updateErr) => {
                 if (updateErr) {
