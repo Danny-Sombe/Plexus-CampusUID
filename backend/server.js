@@ -540,7 +540,10 @@ app.post("/generateQR", async (req, res) => {
         }
 
         const qr = await QRCode.toDataURL(data, {
-            errorCorrectionLevel: "H",
+            // "M" (15%) keeps the module count low so each module is larger and
+            // easier to scan from a screen. "H" packs in far more, smaller
+            // modules than this data needs, which hurts on-screen scanning.
+            errorCorrectionLevel: "M",
             type: "image/png",
             width: 600,
             margin: 4,
