@@ -81,9 +81,32 @@ async function setupTransporter() {
 setupTransporter().catch(err => console.error("setupTransporter error:", err));
 
 
+// Collect non-internal IPv4 LAN addresses (used for startup log and /server-info)
+function getLanAddresses() {
+    const nets = os.networkInterfaces();
+    const addresses = [];
+    Object.keys(nets).forEach((name) => {
+        for (const net of nets[name]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                addresses.push({ name, address: net.address });
+            }
+        }
+    });
+    return addresses;
+}
+
 // Home Route
 app.get("/", (req, res) => {
     res.send("Plexus CampusUID Backend Running");
+});
+
+// Server info Route — lets the QR generator auto-fill a phone-reachable host
+app.get("/server-info", (req, res) => {
+    res.json({
+        success: true,
+        port: LISTEN_PORT,
+        addresses: getLanAddresses()
+    });
 });
 
 // Sign Up Route
@@ -527,13 +550,7 @@ app.listen(LISTEN_PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${LISTEN_PORT} (listening on 0.0.0.0)`);
 
     // Log local LAN IP addresses to help mobile testing
-    const nets = os.networkInterfaces();
-    Object.keys(nets).forEach((name) => {
-        for (const net of nets[name]) {
-            // Skip internal (127.0.0.1) and non-IPv4 addresses
-            if (net.family === 'IPv4' && !net.internal) {
-                console.log(`LAN address (${name}): http://${net.address}:${LISTEN_PORT}`);
-            }
-        }
+    getLanAddresses().forEach(({ name, address }) => {
+        console.log(`LAN address (${name}): http://${address}:${LISTEN_PORT}`);
     });
 });

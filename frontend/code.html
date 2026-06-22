@@ -212,6 +212,28 @@ document.addEventListener("DOMContentLoaded", () => {
         // If page served from the backend, prefer that origin; otherwise prefill with a LAN:port suggestion
         serverHostInput.value = backendOrigin ? `${window.location.hostname}:${defaultPort}` : defaultServerHost;
         serverHostInput.placeholder = 'e.g. 192.168.1.10:5000 or your-ngrok-host.ngrok-free.dev';
+
+        // If we're on localhost (phones can't reach it), ask the backend for its real
+        // LAN IP and prefill that instead, so the QR encodes a phone-openable URL.
+        const currentHost = window.location.hostname || '';
+        const onLocalhost = /^(localhost|127\.0\.0\.1)?$/i.test(currentHost);
+        const infoBase = backendOrigin || (defaultServerHost ? `http://${defaultServerHost}` : null);
+        if (onLocalhost && infoBase) {
+            fetch(`${infoBase.replace(/\/$/, '')}/server-info`)
+                .then(res => res.json())
+                .then(info => {
+                    if (info && info.success && info.addresses && info.addresses.length) {
+                        const lan = info.addresses[0].address;
+                        serverHostInput.value = `${lan}:${info.port}`;
+                        setServerHint(`Auto-filled your LAN IP (${lan}). Make sure your phone is on the same Wi-Fi, or replace this with an ngrok URL.`);
+                    } else {
+                        setServerHint('No LAN IP found. Enter your machine\'s LAN IP or an ngrok URL so your phone can open the QR.');
+                    }
+                })
+                .catch(() => {
+                    setServerHint('Could not detect a LAN IP. Enter your machine\'s LAN IP or an ngrok URL manually.');
+                });
+        }
     }
 
     if (userEmail) {
