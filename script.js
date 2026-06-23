@@ -15,17 +15,16 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
             body: JSON.stringify({ email, password })
         });
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
-        if (data.success) {
+        if (response.ok && data.success) {
             localStorage.setItem("userEmail", email);
-            alert("Login successful!");
             window.location.href = "dashboard.html"; // Redirect to dashboard or home page
         } else {
-            alert("Login failed: " + data.message);
+            alert("Login failed: " + (data.message || `server error ${response.status}`));
         }
     } catch (error) {
         console.error("Error during login:", error);
-        alert("An error occurred during login.");
+        alert(`Cannot connect to server: ${error.message}. The backend may be offline — check that it is deployed and running.`);
     }
 });

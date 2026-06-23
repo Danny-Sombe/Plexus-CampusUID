@@ -29,18 +29,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (financialData.success && financialData.records && financialData.records.length > 0) {
                     const container = document.getElementById("financialContainer");
                     const recordsHTML = financialData.records.map(record => `
-                        <div style="background: #f9fafb; padding: 12px; margin: 8px 0; border-radius: 8px; text-align: left;">
+                        <div class="financial-record">
                             <p><strong>Amount Paid:</strong> $${parseFloat(record.amount_paid).toFixed(2)}</p>
                             <p><strong>Payment Date:</strong> ${record.payment_date ? new Date(record.payment_date).toLocaleDateString() : 'N/A'}</p>
                         </div>
                     `).join("");
                     container.innerHTML = recordsHTML;
                 } else {
-                    document.getElementById("financialContainer").innerHTML = '<p style="color: #999; font-size: 14px;">No financial records found.</p>';
+                    document.getElementById("financialContainer").innerHTML = '<p class="muted">No financial records found.</p>';
                 }
             } catch (finError) {
                 console.error("Financial records fetch error:", finError);
-                document.getElementById("financialContainer").innerHTML = '<p style="color: #e74c3c; font-size: 14px;">Unable to load financial records.</p>';
+                document.getElementById("financialContainer").innerHTML = '<p class="error-text">Unable to load financial records.</p>';
             }
         }
     } catch (error) {

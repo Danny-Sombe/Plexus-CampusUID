@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plexus CampusUID QR Generator</title>
 
    <style>
@@ -17,6 +19,7 @@ body{
     justify-content:center;
     align-items:center;
     min-height:100vh;
+    padding:20px;
 
     background-image:url("images/file_000000002a3c720bb3d1aa5fa8f70086.png");
     background-size:cover;
@@ -25,7 +28,8 @@ body{
 }
 
 .container{
-    width:450px;
+    width:100%;
+    max-width:450px;
     background:rgba(255,255,255,0.95);
 
     backdrop-filter:blur(10px);
@@ -72,12 +76,14 @@ input:focus{
 }
 
 button{
-    padding:12px 22px;
+    width:100%;
+    margin-top:8px;
+    padding:14px 22px;
 
     border:none;
     border-radius:12px;
 
-    font-size:15px;
+    font-size:16px;
     font-weight:bold;
 
     cursor:pointer;
@@ -110,8 +116,10 @@ button:last-of-type:hover{
 img{
     margin-top:25px;
 
-    width:340px;
-    height:340px;
+    width:100%;
+    max-width:340px;
+    height:auto;
+    aspect-ratio:1 / 1;
 
     border:4px solid #f1f5f9;
     border-radius:15px;
@@ -127,6 +135,22 @@ img{
        browser smooths/blurs them and phone scanners fail to read it. */
     image-rendering:pixelated;
     image-rendering:crisp-edges;
+}
+
+@media (max-width:480px){
+    body{
+        align-items:flex-start;
+        padding:12px;
+    }
+
+    .container{
+        padding:22px 18px;
+        margin-top:16px;
+    }
+
+    .container h2{
+        font-size:24px;
+    }
 }
 
 .qr-section{
@@ -181,19 +205,22 @@ img{
 
     <br>
 
-    <img id="qrImage" alt="Generated QR Code">
+    <img id="qrImage" alt="Generated QR Code" style="display:none;">
     <p id="qrLink" style="margin-top:12px;font-size:14px;color:#555;word-break:break-all;"></p>
     <p id="qrHint" style="margin-top:8px;font-size:13px;color:#b45309;"></p>
 
 </div>
 
+<script src="config.js"></script>
 <script>
 
-const backendHost = window.location.hostname || 'localhost';
+// API_BASE is the backend that serves /profile, /generateQR, /server-info.
+// getApiBase() (config.js) resolves to the Render backend on a public host
+// (GitHub Pages) and to localhost:5000 in local dev — NOT hostname:5000 on
+// the public host, which is what used to make this page fail in production.
+const API_BASE = getApiBase();
 const defaultPort = 5000;
-const backendOrigin = (window.location.protocol === 'file:')
-    ? null
-    : `${window.location.protocol}//${window.location.hostname}:${defaultPort}`;
+// Suggestion for the "reachable host" field that gets embedded into the QR.
 const defaultServerHost = `${window.location.hostname || '127.0.0.1'}:${defaultPort}`;
 
 function setServerHint(message) {
@@ -212,17 +239,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const serverHostInput = document.getElementById("serverHost");
 
     if (serverHostInput) {
-        // If page served from the backend, prefer that origin; otherwise prefill with a LAN:port suggestion
-        serverHostInput.value = backendOrigin ? `${window.location.hostname}:${defaultPort}` : defaultServerHost;
+        // Prefill with a LAN:port suggestion for the host embedded into the QR.
+        serverHostInput.value = defaultServerHost;
         serverHostInput.placeholder = 'e.g. 192.168.1.10:5000 or your-ngrok-host.ngrok-free.dev';
 
         // If we're on localhost (phones can't reach it), ask the backend for its real
         // LAN IP and prefill that instead, so the QR encodes a phone-openable URL.
         const currentHost = window.location.hostname || '';
         const onLocalhost = /^(localhost|127\.0\.0\.1)?$/i.test(currentHost);
-        const infoBase = backendOrigin || (defaultServerHost ? `http://${defaultServerHost}` : null);
-        if (onLocalhost && infoBase) {
-            fetch(`${infoBase.replace(/\/$/, '')}/server-info`)
+        if (onLocalhost && API_BASE) {
+            fetch(`${API_BASE.replace(/\/$/, '')}/server-info`)
                 .then(res => res.json())
                 .then(info => {
                     if (info && info.success && info.addresses && info.addresses.length) {
@@ -239,8 +265,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    if (userEmail) {
-        fetch(`${backendOrigin}/profile?email=${encodeURIComponent(userEmail)}`)
+    if (userEmail && API_BASE) {
+        fetch(`${API_BASE.replace(/\/$/, '')}/profile?email=${encodeURIComponent(userEmail)}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.user.studentid) {
@@ -288,29 +314,35 @@ async function generateQR(){
         }
     }
 
-    // Choose API base: prefer backendOrigin if page is served from server, otherwise use user-provided serverHostRaw
-    const apiBase = backendOrigin || (serverHostRaw ? (serverHostRaw.match(/^https?:\/\//) ? serverHostRaw : `http://${serverHostRaw}`) : null);
-
-    if (!apiBase) {
-        alert('Enter a reachable server host (e.g. 192.168.1.10:5000) in the field above, or open this page from the backend server.');
+    // The QR rendering happens on the backend (getApiBase: Render in prod,
+    // localhost:5000 in dev). This is separate from the host embedded in the
+    // QR payload above, which must be phone-reachable.
+    if (!API_BASE) {
+        alert('Could not determine the backend server. Open this page from the deployed site or a running local server.');
         return;
     }
 
-    const response = await fetch(`${apiBase.replace(/\/$/, '')}/generateQR`,{
+    let response;
+    try {
+        response = await fetch(`${API_BASE.replace(/\/$/, '')}/generateQR`,{
 
-            method:"POST",
+                method:"POST",
 
-            headers:{
-                "Content-Type":"application/json"
-            },
+                headers:{
+                    "Content-Type":"application/json"
+                },
 
-            body:JSON.stringify({
-                data:qrPayload
-            })
+                body:JSON.stringify({
+                    data:qrPayload
+                })
 
-        });
+            });
+    } catch (err) {
+        alert(`Cannot connect to server: ${err.message}. The backend may be offline.`);
+        return;
+    }
 
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
 
     if (!response.ok || !result.success) {
         alert(result.message || "Unable to generate QR code.");
@@ -320,6 +352,7 @@ async function generateQR(){
     const qrImg = document.getElementById("qrImage");
     qrImg.src = result.qr;
     qrImg.alt = "Generated QR Code";
+    qrImg.style.display = "inline-block";
     document.getElementById("qrLink").textContent = qrPayload;
 
 }

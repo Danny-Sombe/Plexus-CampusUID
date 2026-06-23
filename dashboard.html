@@ -12,29 +12,29 @@
         <p>Welcome to your student dashboard. Manage your account and view your campus details here.</p>
 
         <div style="margin-top: 10px;">
-            <section style="margin-bottom: 10px;">
-                <h2 style="font-size: 20px; margin-bottom: 10px;">Your Profile</h2>
+            <section class="dashboard-section">
+                <h2>Your Profile</h2>
                 <p><strong>Name:</strong> <span id="fullname">Student Name</span></p>
                 <p><strong>Email:</strong> <span id="email">student@example.com</span></p>
                 <p><strong>Student ID:</strong> <span id="studentid">123456</span></p>
             </section>
 
-            <section style="margin-bottom: 10px;">
-                <h2 style="font-size: 20px; margin-bottom: 10px;">Financial Records</h2>
+            <section class="dashboard-section">
+                <h2>Financial Records</h2>
                 <div id="financialContainer">
-                    <p style="color: #999; font-size: 14px;">Loading financial records...</p>
+                    <p class="muted">Loading financial records...</p>
                 </div>
             </section>
 
-            <section style="margin-bottom: 10px;">
-                <h2 style="font-size: 20px; margin-bottom: 10px;">Campus Info</h2>
+            <section class="dashboard-section">
+                <h2>Campus Info</h2>
                 <p>Access your QR code and campus announcements from your dashboard.</p>
             </section>
 
-            <a href="code.html" style="display: inline-block; width: 100%; text-decoration: none; background: #2b6cb0; color: white; padding: 12px 16px; border-radius: 6px; text-align: center; margin-bottom: 10px;">Generate QR Code</a>
+            <a href="code.html" class="btn-link">Generate QR Code</a>
         </div>
 
-        <button id="logout-button" type="button" style="display: inline-block; width: 100%; margin-top: 10px;">Log Out</button>
+        <button id="logout-button" type="button">Log Out</button>
     </div>
     <script src="config.js"></script>
     <script src="dashboard.js"></script>
